@@ -1,17 +1,16 @@
-import React, { useEffect } from "react";
+import React, { useContext } from "react";
 import { useForm } from "react-hook-form";
 import _ from "lodash";
-import { useLocalStorage } from "@src/utils/hooks";
+import { EnvironmentContext } from "../contexts";
 
-type FormValues = {
+type ConfigFormValues = {
   notionToken: string;
   databaseId: string;
 };
 
 export function ConfigForm() {
-  const [envConfig, setEnvConfig] = useLocalStorage("envConfig", {});
-
-  const { register, getValues } = useForm<FormValues>({
+  const { envConfig, setEnvConfig } = useContext(EnvironmentContext);
+  const { register, getValues } = useForm<ConfigFormValues>({
     defaultValues: envConfig,
   });
 
