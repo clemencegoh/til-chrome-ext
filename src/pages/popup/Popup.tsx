@@ -1,9 +1,9 @@
-import React, { useContext } from "react";
+import React from "react";
 import { SnippetForm } from "./components/SnippetForm";
 import { ConfigForm } from "./components/ConfigForm";
 import { useLocalStorage } from "@src/utils/hooks";
-import { defaultEnvConfig } from "./constants";
-import { EnvironmentContext } from "./contexts";
+import { defaultEnvConfig } from "@src/utils/constants";
+import { EnvironmentContext } from "@src/utils/contexts";
 
 export default function Popup(): JSX.Element {
   const [envConfig, setEnvConfig] = useLocalStorage(

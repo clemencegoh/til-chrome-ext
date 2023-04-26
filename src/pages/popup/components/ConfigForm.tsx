@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
 import { useForm } from "react-hook-form";
 import _ from "lodash";
-import { EnvironmentContext } from "../contexts";
+import { EnvironmentContext } from "../../../utils/contexts";
 
 type ConfigFormValues = {
   notionToken: string;

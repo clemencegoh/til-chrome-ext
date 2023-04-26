@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useForm } from "react-hook-form";
-import { Client } from "@notionhq/client";
-import { EnvironmentContext } from "../contexts";
-import { useLocalStorage } from "@src/utils/hooks";
+import { EnvironmentContext } from "../../../utils/contexts";
+import { useLocalStorage, useNotionClient } from "@src/utils/hooks";
 import { ArrowTopRightOnSquareIcon, XMarkIcon } from "./Icons";
 
 type SnippetFormValues = {
@@ -15,7 +14,7 @@ type SnippetFormValues = {
 export function SnippetForm() {
   const [imgPreview, setImgPreview] = useState<string>("");
   const { envConfig, setEnvConfig } = useContext(EnvironmentContext);
-  const [notionClient, setNotionClient] = useState<Client>();
+  const notionClient = useNotionClient(envConfig);
   const [formError, setFormError] = useState<string>();
   const [submitting, setSubmitting] = useState<boolean>(false);
 
@@ -25,16 +24,6 @@ export function SnippetForm() {
     "shouldOpenLink",
     false
   );
-
-  useEffect(() => {
-    const allCredsPresent = !!envConfig.notionToken && !!envConfig.databaseId;
-    if (allCredsPresent) {
-      const notion = new Client({
-        auth: envConfig.notionToken,
-      });
-      setNotionClient(notion);
-    }
-  }, [envConfig]);
 
   const { register, getValues, setValue } = useForm<SnippetFormValues>();
   const cleanupForm = () => {

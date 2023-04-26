@@ -11,6 +11,7 @@
   "type": "module",
   "dependencies": {
     "@notionhq/client": "^2.2.4",
+    "@tanstack/react-query": "^4.29.5",
     "lodash": "^4.17.21",
     "notion-types": "^6.16.0",
     "react": "^18.2.0",
