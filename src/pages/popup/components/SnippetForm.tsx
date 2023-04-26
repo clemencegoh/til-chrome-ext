@@ -2,6 +2,8 @@ import React, { useState, useEffect, useContext } from "react";
 import { useForm } from "react-hook-form";
 import { Client } from "@notionhq/client";
 import { EnvironmentContext } from "../contexts";
+import { useLocalStorage } from "@src/utils/hooks";
+import { ArrowTopRightOnSquareIcon, XMarkIcon } from "./Icons";
 
 type SnippetFormValues = {
   title: string;
@@ -16,6 +18,13 @@ export function SnippetForm() {
   const [notionClient, setNotionClient] = useState<Client>();
   const [formError, setFormError] = useState<string>();
   const [submitting, setSubmitting] = useState<boolean>(false);
+
+  // Since we can't upload directly through API, screenshots need to be uploaded
+  // manually by following the link
+  const [shouldOpenLink, setShouldOpenLink] = useLocalStorage(
+    "shouldOpenLink",
+    false
+  );
 
   useEffect(() => {
     const allCredsPresent = !!envConfig.notionToken && !!envConfig.databaseId;
@@ -40,7 +49,7 @@ export function SnippetForm() {
     setSubmitting(true);
     if (notionClient) {
       try {
-        await notionClient.pages.create({
+        const res = await notionClient.pages.create({
           parent: {
             database_id: envConfig.databaseId,
           },
@@ -63,19 +72,28 @@ export function SnippetForm() {
                 },
               ],
             },
-            Tags: {
-              multi_select: getValues()
-                .tags?.split(",")
-                ?.map((tag) => ({
-                  name: tag.trim(),
-                })),
-            },
+            ...(getValues().tags && {
+              Tags: {
+                multi_select: getValues()
+                  .tags?.split(",")
+                  ?.map((tag) => ({
+                    name: tag.trim(),
+                  })),
+              },
+            }),
           },
         });
+
+        if (shouldOpenLink) {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore: url exists but not captured in type
+          window.open(res.url, "_blank");
+        }
       } catch (err) {
         console.error(err);
         setFormError((err as any).toString());
       } finally {
+        cleanupForm();
         setSubmitting(false);
       }
     }
@@ -127,10 +145,29 @@ export function SnippetForm() {
           </button>
         </div>
       </div>
+      <div className="flex justify-end px-5 pt-1">
+        <button
+          type="button"
+          className={`${
+            shouldOpenLink
+              ? "text-blue-500  border-blue-500 hover:bg-blue-300 dark:hover:bg-blue-500 dark:border-blue-500 dark:text-blue-500 dark:hover:text-white dark:focus:ring-blue-800"
+              : "text-red-500  border-red-500 hover:bg-red-300 dark:hover:bg-red-500 dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:focus:ring-red-800"
+          } hover:text-white
+          focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm p-1.5 text-center 
+          inline-flex items-center 
+          `}
+          onClick={() => {
+            setShouldOpenLink(!shouldOpenLink);
+          }}
+        >
+          {shouldOpenLink ? <ArrowTopRightOnSquareIcon /> : <XMarkIcon />}
+          <span className="sr-only">Follow link on save</span>
+        </button>
+      </div>
 
       <form
         onSubmit={onSubmit}
-        className="px-5 py-3 bg-white dark:bg-gray-900 antialiased "
+        className="px-5 pt-1 pb-3 bg-white dark:bg-gray-900 antialiased "
       >
         <div className="mb-2">
           <label
@@ -190,7 +227,7 @@ export function SnippetForm() {
         <p className="text-red-500 mb-1">{formError}</p>
         <button
           className={`
-            flex items-center w-full text-blue-700  border border-blue-500 
+            flex items-center justify-center w-full text-blue-700  border border-blue-500 
             focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center 
             mb-2 dark:border-blue-500 dark:text-blue-500 dark:focus:ring-blue-800
             ${
@@ -220,7 +257,9 @@ export function SnippetForm() {
               />
             </svg>
           )}
-          {submitting ? "Submitting..." : "Create Snippet"}
+          <p className="text-center">
+            {submitting ? "Submitting..." : "Create Snippet"}
+          </p>
         </button>
       </form>
     </>
