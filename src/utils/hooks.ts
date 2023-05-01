@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Client } from '@notionhq/client';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { TEnvConfig } from './constants';
+import _ from 'lodash';
 import { INotionQueryResult, TSnippet } from './interface';
 
 export function useLocalStorage(key: string, initialValue: any) {
@@ -62,6 +63,8 @@ export function useDatabaseMigration(envConfig: TEnvConfig) {
     {}
   );
 
+  const [checkDBError, setCheckDBError] = useState<string>();
+
   useQuery(
     ['currentDB'],
     () => client?.databases?.retrieve({database_id: envConfig.databaseId}),
@@ -78,9 +81,15 @@ export function useDatabaseMigration(envConfig: TEnvConfig) {
           console.warn('Found malformed database schema! Mutating...');
           mutate();
         }
+      },
+      onError: (err) => {
+        // likely API credentials are wrong 
+        setCheckDBError(err?.toString());
       }
     }
   );
+
+  return [checkDBError, isLoading, error] as const;
 }
 
 
@@ -89,7 +98,7 @@ export function useAllData(): TSnippet[] {
   const client = useNotionClient(envConfig);
   const dbQuery = useQuery(
     ['queryDB'], 
-    () => client?.databases?.query({database_id: envConfig.databaseId}), 
+    () => client?.databases?.query({database_id: envConfig.databaseId, sorts: []}), 
     {enabled: !!client}
   );
   return dbQuery.data?.results?.map((result) => {
@@ -106,4 +115,22 @@ export function useAllData(): TSnippet[] {
       ), 
     }
   }) ?? [];
+}
+
+export function useRandomEntry(): TSnippet {
+  const data = useAllData();
+  const randomPos = _.random(0, data.length - 1, false);
+  return data[randomPos];
+}
+
+export function useClock() {
+    const [time, setTime] = useState<Date>(new Date());
+  useEffect(() => {
+    const clockInterval = setInterval(() => {
+      setTime(new Date());
+    }, 1000);
+  
+    return () => clearInterval(clockInterval);
+  })
+  return time;
 }
