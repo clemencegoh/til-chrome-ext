@@ -4,9 +4,12 @@ export type TSnippet = {
   snippetImg?: string;
   tags?: string[];
   title: string;
+  link?: string;
 }
 
 export interface INotionQueryResult {
+  url: string,
+  last_edited_time: string;
   properties: {
     Snippet: {
       id: string;

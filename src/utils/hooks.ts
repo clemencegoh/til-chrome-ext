@@ -93,14 +93,23 @@ export function useDatabaseMigration(envConfig: TEnvConfig) {
 }
 
 
-export function useAllData(): TSnippet[] {
+export function useAllData(queryOnce?: boolean): TSnippet[] {
   const [envConfig] = useLocalStorage("envConfig", {});
+  const [done, setDone] = useState<boolean>(false);
   const client = useNotionClient(envConfig);
   const dbQuery = useQuery(
     ['queryDB'], 
     () => client?.databases?.query({database_id: envConfig.databaseId, sorts: []}), 
-    {enabled: !!client}
+    {
+      enabled: !!client && !done, 
+      onSuccess: () => {
+        if (queryOnce) {
+          setDone(true);
+        }
+      }
+    }
   );
+  
   return dbQuery.data?.results?.map((result) => {
     const dataRes = result as unknown as INotionQueryResult;
     return {
@@ -112,13 +121,14 @@ export function useAllData(): TSnippet[] {
       title: dataRes.properties.Title.title.reduce(
         (accum, curr) => curr.plain_text + accum,
         ''
-      ), 
+      ) ?? '', 
+      link: dataRes.url,
     }
   }) ?? [];
 }
 
 export function useRandomEntry(): TSnippet {
-  const data = useAllData();
+  const data = useAllData(true);
   const randomPos = _.random(0, data.length - 1, false);
   return data[randomPos];
 }

@@ -1,30 +1,40 @@
 import React from "react";
 import {
-  useAllData,
-  useClock,
   useDatabaseMigration,
   useLocalStorage,
   useRandomEntry,
 } from "@src/utils/hooks";
 import NightCityBG from "./night_city.jpg";
 import { Clock } from "./Clock";
+import { TILCard } from "./TILCard";
 
 export function EntryPoint() {
   const item = useRandomEntry();
   const [envConfig] = useLocalStorage("envConfig", {});
-
-  console.log(item);
-
   useDatabaseMigration(envConfig);
+
   return (
     <div
-      className="bg-cover bg-center h-screen flex items-center justify-center"
+      className="bg-cover bg-center h-screen flex items-center justify-center flex-col gap-8"
       style={{
         backgroundImage: `url(${NightCityBG})`,
       }}
     >
-      <Clock />
-      <section id="reminders"></section>
+      <section className="">
+        <Clock />
+      </section>
+
+      <section id="reminders" className="min-w-[20rem]">
+        {item && (
+          <TILCard
+            title={item.title}
+            externalLink={item.link}
+            tags={item.tags}
+            imageURL={item.snippetImg}
+            content={item.snippetText}
+          />
+        )}
+      </section>
     </div>
   );
 }
