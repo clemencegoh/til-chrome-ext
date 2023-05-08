@@ -6,6 +6,7 @@ import { EnvironmentContext } from "../../../utils/contexts";
 type ConfigFormValues = {
   notionToken: string;
   databaseId: string;
+  openaiKey: string;
 };
 
 export function ConfigForm() {
@@ -57,6 +58,21 @@ export function ConfigForm() {
           type="text"
           id="db-id"
           placeholder="Database ID"
+          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+        />
+      </div>
+      <div className="mb-2">
+        <label
+          htmlFor="db-id"
+          className="block text-sm font-medium text-gray-900 dark:text-white"
+        >
+          Open AI Key
+        </label>
+        <input
+          {...register("openaiKey")}
+          type="text"
+          id="openai-key"
+          placeholder="openai Key"
           className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
         />
       </div>

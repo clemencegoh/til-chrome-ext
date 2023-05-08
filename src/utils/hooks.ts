@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Client } from '@notionhq/client';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { TEnvConfig } from './constants';
 import _ from 'lodash';
 import { INotionQueryResult, TSnippet } from './interface';
+import { Configuration, OpenAIApi } from "openai";
 
 export function useLocalStorage(key: string, initialValue: any) {
   const [state, setState] = useState(() => {
@@ -143,4 +144,44 @@ export function useClock() {
     return () => clearInterval(clockInterval);
   })
   return time;
+}
+
+export function useOpenAI(apiKey: string) {
+  const configuration = useRef<Configuration>();
+  const openai = useRef<OpenAIApi>();
+  useEffect(() => {
+    if (!configuration.current) {
+      configuration.current =   new Configuration({ apiKey });
+    }
+    if (!openai.current && configuration.current) {
+      openai.current    = new OpenAIApi(configuration.current); 
+    }
+  }, []);
+
+  return openai?.current;
+}
+
+type Timer = ReturnType<typeof setTimeout>;
+type SomeFunction = (...args: any[]) => void;
+/**
+ *
+ * @param func The original, non debounced function (You can pass any number of args to it)
+ * @param delay The delay (in ms) for the function to return
+ * @returns The debounced function, which will run only if the debounced function has not been called in the last (delay) ms
+ */
+export function useDebounce<Func extends SomeFunction>(
+  func: Func,
+  delay = 1000
+) {
+  const [timer, setTimer] = useState<Timer>();
+
+  const debouncedFunction = ((...args) => {
+    const newTimer = setTimeout(() => {
+      func(...args);
+    }, delay);
+    clearTimeout(timer);
+    setTimer(newTimer);
+  }) as Func;
+
+  return debouncedFunction;
 }

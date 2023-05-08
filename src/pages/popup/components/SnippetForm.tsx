@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useForm } from "react-hook-form";
 import { EnvironmentContext } from "../../../utils/contexts";
-import { useLocalStorage, useNotionClient } from "@src/utils/hooks";
-import { ArrowTopRightOnSquareIcon, XMarkIcon } from "./Icons";
+import { useDebounce, useNotionClient, useOpenAI } from "@src/utils/hooks";
+import { ChatCompletionRequestMessage } from "openai";
 
 type SnippetFormValues = {
   title: string;
@@ -17,15 +17,9 @@ export function SnippetForm() {
   const notionClient = useNotionClient(envConfig);
   const [formError, setFormError] = useState<string>();
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const openAI = useOpenAI(envConfig.openaiKey);
 
-  // Since we can't upload directly through API, screenshots need to be uploaded
-  // manually by following the link
-  const [shouldOpenLink, setShouldOpenLink] = useLocalStorage(
-    "shouldOpenLink",
-    false
-  );
-
-  const { register, getValues, setValue } = useForm<SnippetFormValues>();
+  const { register, getValues, setValue, watch } = useForm<SnippetFormValues>();
   const cleanupForm = () => {
     setValue("tags", "");
     setValue("imgURL", "");
@@ -33,12 +27,73 @@ export function SnippetForm() {
     setValue("title", "");
   };
 
+  const parseMaybe = (item?: string): string[] => {
+    if (!item) return [];
+    const cleanedItem = item.replaceAll('"', "");
+    try {
+      if (item.includes("{")) {
+        // this is a JSON maybe?
+        const parsed = JSON.parse(cleanedItem);
+        return parsed?.tags ?? [];
+      } else {
+        return cleanedItem.split(",")?.map((token) => token.trim());
+      }
+    } catch (err) {
+      console.error(err);
+      return [];
+    }
+  };
+
+  const askGPT = async () => {
+    try {
+      const messages: ChatCompletionRequestMessage[] = [
+        {
+          role: "system",
+          content:
+            "You are an assistant that only speaks JSON. Do not reply in normal text",
+        },
+        {
+          role: "user",
+          content: `
+            Can you suggest 1 or more key words to describe the below in a field named 'tags'?
+
+            ${getValues("snippet")}
+            `,
+        },
+      ];
+      const response = await openAI?.createChatCompletion({
+        messages,
+        model: "gpt-3.5-turbo",
+      });
+      const suggestedTags: Array<string> = parseMaybe(
+        response?.data?.choices?.[0]?.message?.content
+      );
+      if (suggestedTags && suggestedTags.length > 0) {
+        setValue("tags", suggestedTags.join(", "));
+      }
+    } catch (err: any) {
+      console.error(err);
+    }
+  };
+
+  const askGPTDebounced = useDebounce(askGPT);
+
+  useEffect(() => {
+    if (getValues("tags") !== "") {
+      return;
+    }
+    if (getValues("snippet") === "") {
+      return;
+    }
+    askGPTDebounced();
+  }, [watch("snippet")]);
+
   const onSubmit = async (e: any) => {
     e.preventDefault();
     setSubmitting(true);
     if (notionClient) {
       try {
-        const res = await notionClient.pages.create({
+        await notionClient.pages.create({
           parent: {
             database_id: envConfig.databaseId,
           },
@@ -72,12 +127,6 @@ export function SnippetForm() {
             }),
           },
         });
-
-        if (shouldOpenLink) {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore: url exists but not captured in type
-          window.open(res.url, "_blank");
-        }
       } catch (err) {
         console.error(err);
         setFormError((err as any).toString());
@@ -127,31 +176,12 @@ export function SnippetForm() {
           <button
             className="text-red-500 hover:text-white border border-red-500 hover:bg-red-600 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-2 py-1 text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900"
             onClick={() => {
-              setEnvConfig({ notionToken: "", databaseId: "" });
+              setEnvConfig({ notionToken: "", databaseId: "", openaiKey: "" });
             }}
           >
             Reset
           </button>
         </div>
-      </div>
-      <div className="flex justify-end px-5 pt-1">
-        <button
-          type="button"
-          className={`${
-            shouldOpenLink
-              ? "text-blue-500  border-blue-500 hover:bg-blue-300 dark:hover:bg-blue-500 dark:border-blue-500 dark:text-blue-500 dark:hover:text-white dark:focus:ring-blue-800"
-              : "text-red-500  border-red-500 hover:bg-red-300 dark:hover:bg-red-500 dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:focus:ring-red-800"
-          } hover:text-white
-          focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm p-1.5 text-center 
-          inline-flex items-center 
-          `}
-          onClick={() => {
-            setShouldOpenLink(!shouldOpenLink);
-          }}
-        >
-          {shouldOpenLink ? <ArrowTopRightOnSquareIcon /> : <XMarkIcon />}
-          <span className="sr-only">Follow link on save</span>
-        </button>
       </div>
 
       <form
@@ -179,7 +209,7 @@ export function SnippetForm() {
             htmlFor="tags"
             className="block mb-1 text-sm font-medium text-gray-900 dark:text-white"
           >
-            Tags
+            Tags (Leave blank for ChatGPT suggestions)
           </label>
           <input
             {...register("tags")}
