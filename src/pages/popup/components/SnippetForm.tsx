@@ -53,13 +53,13 @@ export function SnippetForm() {
               ],
             },
             Snippet: {
-              rich_text: [
-                {
+              rich_text: getValues()
+                .snippet.split("\n")
+                .map((snip) => ({
                   text: {
-                    content: getValues().snippet,
+                    content: snip,
                   },
-                },
-              ],
+                })),
             },
             ...(getValues().tags && {
               Tags: {
