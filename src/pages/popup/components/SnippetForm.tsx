@@ -68,25 +68,12 @@ export function SnippetForm() {
       const suggestedTags: Array<string> = parseMaybe(
         response?.data?.choices?.[0]?.message?.content
       );
-      if (suggestedTags && suggestedTags.length > 0) {
-        setValue("tags", suggestedTags.join(", "));
-      }
+      // override
+      setValue("tags", suggestedTags.join(", "));
     } catch (err: any) {
-      console.error(err);
+      setValue("tags", err.toString());
     }
   };
-
-  const askGPTDebounced = useDebounce(askGPT);
-
-  useEffect(() => {
-    if (getValues("tags") !== "") {
-      return;
-    }
-    if (getValues("snippet") === "") {
-      return;
-    }
-    askGPTDebounced();
-  }, [watch("snippet")]);
 
   const onSubmit = async (e: any) => {
     e.preventDefault();
@@ -205,12 +192,29 @@ export function SnippetForm() {
           />
         </div>
         <div className="mb-2">
-          <label
-            htmlFor="tags"
-            className="block mb-1 text-sm font-medium text-gray-900 dark:text-white"
-          >
-            Tags (Leave blank for ChatGPT suggestions)
-          </label>
+          <div className="flex justify-between items-center">
+            <label
+              htmlFor="tags"
+              className="block mb-1 text-sm font-medium text-gray-900 dark:text-white"
+            >
+              Tags
+            </label>
+            <button
+              type="button"
+              className="text-blue-500 hover:text-white border border-blue-500 hover:bg-blue-600 
+                focus:ring-4 focus:outline-none focus:ring-blue-300 
+                font-medium rounded-lg text-sm px-2 py-1 my-2 text-center 
+                dark:border-blue-500 dark:text-blue-500 dark:hover:text-white 
+                dark:hover:bg-blue-600 dark:focus:ring-blue-900
+                "
+              onClick={() => {
+                askGPT();
+              }}
+            >
+              Generate with ChatGPT
+            </button>
+          </div>
+
           <input
             {...register("tags")}
             type="text"

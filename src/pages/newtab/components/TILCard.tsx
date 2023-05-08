@@ -44,7 +44,7 @@ export function TILCard({
         <p className="mb-3 font-normal text-gray-700 dark:text-gray-400">
           {content}
         </p>
-        <p className="mb-3">
+        <p className="mb-3 grid grid-cols-3 gap-2">
           {tags?.map((tag) => {
             const tagColor = stringToColor(tag) + "80";
             return (
@@ -53,7 +53,7 @@ export function TILCard({
                 className="text-black-800 
                   text-xs font-medium mr-2 
                   px-3 py-1 rounded 
-                  border
+                  border flex justify-center items-center
                 "
                 style={{
                   backgroundColor: tagColor,
