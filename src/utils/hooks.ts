@@ -113,13 +113,13 @@ export function useAllData(queryOnce?: boolean): TSnippet[] {
   return dbQuery.data?.results?.map((result) => {
     const dataRes = result as unknown as INotionQueryResult;
     return {
-      snippetText: dataRes.properties.Snippet.rich_text.reduce(
-        (accum, curr) => curr.plain_text + accum,
+      snippetText: dataRes.properties.Snippet.rich_text.reduceRight(
+        (accum, curr) => `${curr.plain_text} \n${accum}`,
         ''
       ),
       tags: dataRes.properties.Tags.multi_select.map(item => item.name),
-      title: dataRes.properties.Title.title.reduce(
-        (accum, curr) => curr.plain_text + accum,
+      title: dataRes.properties.Title.title.reduceRight(
+        (accum, curr) => `${curr.plain_text} \n${accum}`,
         ''
       ) ?? '', 
       link: dataRes.url,
