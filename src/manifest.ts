@@ -21,15 +21,15 @@ const manifest: Manifest.WebExtensionManifest = {
     newtab: 'src/pages/newtab/index.html',
   },
   icons: {
-    '128': 'icon.png',
+    '128': 'icon_sm.png',
   },
-  content_scripts: [
-    {
-      matches: ['http://*/*', 'https://*/*', '<all_urls>'],
-      js: ['src/pages/content/index.js'],
-      css: ['contentStyle.css'],
-    },
-  ],
+  // content_scripts: [
+  //   {
+  //     matches: ['http://*/*', 'https://*/*', '<all_urls>'],
+  //     js: ['src/pages/content/index.js'],
+  //     css: ['contentStyle.css'],
+  //   },
+  // ],
   devtools_page: 'src/pages/devtools/index.html',
   web_accessible_resources: [
     {

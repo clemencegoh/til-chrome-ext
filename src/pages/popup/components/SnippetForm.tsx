@@ -29,13 +29,13 @@ export function SnippetForm() {
 
   const parseMaybe = (item?: string): string[] => {
     if (!item) return [];
-    const cleanedItem = item.replaceAll('"', "");
     try {
       if (item.includes("{")) {
         // this is a JSON maybe?
-        const parsed = JSON.parse(cleanedItem);
+        const parsed = JSON.parse(item);
         return parsed?.tags ?? [];
       } else {
+        const cleanedItem = item.replaceAll('"', "");
         return cleanedItem.split(",")?.map((token) => token.trim());
       }
     } catch (err) {
