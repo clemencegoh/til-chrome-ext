@@ -30,6 +30,12 @@ const manifest: Manifest.WebExtensionManifest = {
   //     css: ['contentStyle.css'],
   //   },
   // ],
+  permissions: [
+    "activeTab",
+  ],
+  host_permissions: [
+    "<all_urls>"
+  ],
   devtools_page: 'src/pages/devtools/index.html',
   web_accessible_resources: [
     {

@@ -1,3 +1,6 @@
+# DO NOT USE
+Working on a v2 now, v1 failing due to CORS issue from Notion. 
+
 # TIL Notion-ChatGPT Chrome Extension
 This is a chrome extension that enables users to take notes using Notion and ChatGPT and save them to their Notion account. The extension uses OpenAI's GPT-3.5 architecture to generate snippets of information that can be quickly saved as notes. These notes then show up in the form of a card on the "New Tab" page, serving as reminders of what the user has learned.
 
