@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
-import { Client } from '@notionhq/client';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { TEnvConfig } from './constants';
-import _ from 'lodash';
-import { INotionQueryResult, TSnippet } from './interface';
+import { useState, useEffect, useRef } from "react";
+import { Client } from "@notionhq/client";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { TEnvConfig, defaultEnvConfig } from "./constants";
+import _ from "lodash";
+import { INotionQueryResult, TSnippet } from "./interface";
 import { Configuration, OpenAIApi } from "openai";
 
 export function useLocalStorage(key: string, initialValue: any) {
@@ -22,8 +22,7 @@ export function useLocalStorage(key: string, initialValue: any) {
 export function useNotionClient(envConfig: TEnvConfig) {
   const [notionClient, setNotionClient] = useState<Client>();
   useEffect(() => {
-    const allCredsPresent = !!envConfig.notionToken && !!envConfig.databaseId;
-    if (allCredsPresent) {
+    if (envConfig.notionToken) {
       const notion = new Client({
         auth: envConfig.notionToken,
       });
@@ -40,10 +39,10 @@ export function useNotionClient(envConfig: TEnvConfig) {
 export function useDatabaseMigration(envConfig: TEnvConfig) {
   const client = useNotionClient(envConfig);
 
-  const {mutate, isLoading, error} = useMutation(
-    ['migrate DB keys'],
-    () => client?.databases?.update(
-      {
+  const { mutate, isLoading, error } = useMutation(
+    ["migrate DB keys"],
+    () =>
+      client?.databases?.update({
         database_id: envConfig.databaseId,
         properties: {
           Title: {
@@ -57,75 +56,85 @@ export function useDatabaseMigration(envConfig: TEnvConfig) {
           },
           Tags: {
             multi_select: {},
-          }
-        }
-      }
-    ) as any,
+          },
+        },
+      }) as any,
     {}
   );
 
   const [checkDBError, setCheckDBError] = useState<string>();
 
   useQuery(
-    ['currentDB'],
-    () => client?.databases?.retrieve({database_id: envConfig.databaseId}),
+    ["currentDB"],
+    () => client?.databases?.retrieve({ database_id: envConfig.databaseId }),
     {
       enabled: !!client,
       onSuccess: (data) => {
-        if (![
-          Object.prototype.hasOwnProperty.call(data?.properties, 'Snippet'),
-          Object.prototype.hasOwnProperty.call(data?.properties, 'SnippetImg'),
-          Object.prototype.hasOwnProperty.call(data?.properties, 'Tags'),
-          Object.prototype.hasOwnProperty.call(data?.properties, 'Title'),
-        ].every(e => e)) {
+        if (
+          ![
+            Object.prototype.hasOwnProperty.call(data?.properties, "Snippet"),
+            Object.prototype.hasOwnProperty.call(
+              data?.properties,
+              "SnippetImg"
+            ),
+            Object.prototype.hasOwnProperty.call(data?.properties, "Tags"),
+            Object.prototype.hasOwnProperty.call(data?.properties, "Title"),
+          ].every((e) => e)
+        ) {
           // perform migration if not all Truthy
-          console.warn('Found malformed database schema! Mutating...');
+          console.warn("Found malformed database schema! Mutating...");
           mutate();
         }
       },
       onError: (err) => {
-        // likely API credentials are wrong 
+        // likely API credentials are wrong
         setCheckDBError(err?.toString());
-      }
+      },
     }
   );
 
   return [checkDBError, isLoading, error] as const;
 }
 
-
 export function useAllData(queryOnce?: boolean): TSnippet[] {
-  const [envConfig] = useLocalStorage("envConfig", {});
+  const [envConfig] = useLocalStorage("envConfig", defaultEnvConfig);
   const [done, setDone] = useState<boolean>(false);
   const client = useNotionClient(envConfig);
   const dbQuery = useQuery(
-    ['queryDB'], 
-    () => client?.databases?.query({database_id: envConfig.databaseId, sorts: []}), 
+    ["queryDB"],
+    () =>
+      client?.databases?.query({
+        database_id: envConfig.databaseId,
+        sorts: [],
+      }),
     {
-      enabled: !!client && !done, 
+      enabled: !!client && !done,
       onSuccess: () => {
         if (queryOnce) {
           setDone(true);
         }
-      }
+      },
     }
   );
-  
-  return dbQuery.data?.results?.map((result) => {
-    const dataRes = result as unknown as INotionQueryResult;
-    return {
-      snippetText: dataRes.properties.Snippet.rich_text.reduceRight(
-        (accum, curr) => `${curr.plain_text} \n${accum}`,
-        ''
-      ),
-      tags: dataRes.properties.Tags.multi_select.map(item => item.name),
-      title: dataRes.properties.Title.title.reduceRight(
-        (accum, curr) => `${curr.plain_text} \n${accum}`,
-        ''
-      ) ?? '', 
-      link: dataRes.url,
-    }
-  }) ?? [];
+
+  return (
+    dbQuery.data?.results?.map((result) => {
+      const dataRes = result as unknown as INotionQueryResult;
+      return {
+        snippetText: dataRes.properties.Snippet.rich_text.reduceRight(
+          (accum, curr) => `${curr.plain_text} \n${accum}`,
+          ""
+        ),
+        tags: dataRes.properties.Tags.multi_select.map((item) => item.name),
+        title:
+          dataRes.properties.Title.title.reduceRight(
+            (accum, curr) => `${curr.plain_text} \n${accum}`,
+            ""
+          ) ?? "",
+        link: dataRes.url,
+      };
+    }) ?? []
+  );
 }
 
 export function useRandomEntry(): TSnippet {
@@ -135,14 +144,14 @@ export function useRandomEntry(): TSnippet {
 }
 
 export function useClock() {
-    const [time, setTime] = useState<Date>(new Date());
+  const [time, setTime] = useState<Date>(new Date());
   useEffect(() => {
     const clockInterval = setInterval(() => {
       setTime(new Date());
     }, 1000);
-  
+
     return () => clearInterval(clockInterval);
-  })
+  });
   return time;
 }
 
@@ -151,10 +160,10 @@ export function useOpenAI(apiKey: string) {
   const openai = useRef<OpenAIApi>();
   useEffect(() => {
     if (!configuration.current) {
-      configuration.current =   new Configuration({ apiKey });
+      configuration.current = new Configuration({ apiKey });
     }
     if (!openai.current && configuration.current) {
-      openai.current    = new OpenAIApi(configuration.current); 
+      openai.current = new OpenAIApi(configuration.current);
     }
   }, []);
 

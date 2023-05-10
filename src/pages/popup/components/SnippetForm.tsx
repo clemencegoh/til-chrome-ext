@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useForm } from "react-hook-form";
 import { EnvironmentContext } from "../../../utils/contexts";
-import { useDebounce, useNotionClient, useOpenAI } from "@src/utils/hooks";
+import { useNotionClient, useOpenAI } from "@src/utils/hooks";
 import { ChatCompletionRequestMessage } from "openai";
 
 type SnippetFormValues = {
@@ -19,7 +19,7 @@ export function SnippetForm() {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const openAI = useOpenAI(envConfig.openaiKey);
 
-  const { register, getValues, setValue, watch } = useForm<SnippetFormValues>();
+  const { register, getValues, setValue } = useForm<SnippetFormValues>();
   const cleanupForm = () => {
     setValue("tags", "");
     setValue("imgURL", "");

@@ -7,10 +7,11 @@ import {
 import NightCityBG from "./night_city.jpg";
 import { Clock } from "./Clock";
 import { TILCard } from "./TILCard";
+import { defaultEnvConfig } from "@src/utils/constants";
 
 export function EntryPoint() {
   const item = useRandomEntry();
-  const [envConfig] = useLocalStorage("envConfig", {});
+  const [envConfig] = useLocalStorage("envConfig", defaultEnvConfig);
   useDatabaseMigration(envConfig);
 
   return (

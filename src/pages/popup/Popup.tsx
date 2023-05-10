@@ -11,7 +11,9 @@ export default function Popup(): JSX.Element {
     defaultEnvConfig
   );
 
-  const isMissingDetails = Object.values(envConfig).includes("");
+  const isMissingDetails =
+    Object.values(envConfig).includes("") ||
+    Object.keys(envConfig).length < Object.keys(defaultEnvConfig).length;
 
   return (
     <EnvironmentContext.Provider
