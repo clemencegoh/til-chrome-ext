@@ -5,6 +5,7 @@ import { TEnvConfig, defaultEnvConfig } from "./constants";
 import _ from "lodash";
 import { INotionQueryResult, TSnippet } from "./interface";
 import { Configuration, OpenAIApi } from "openai";
+import { QueryDatabaseResponse } from "@notionhq/client/build/src/api-endpoints";
 
 export function useLocalStorage(key: string, initialValue: any) {
   const [state, setState] = useState(() => {
@@ -96,11 +97,12 @@ export function useDatabaseMigration(envConfig: TEnvConfig) {
   return [checkDBError, isLoading, error] as const;
 }
 
-export function useAllData(queryOnce?: boolean): TSnippet[] {
+export function useAllData(): TSnippet[] {
   const [envConfig] = useLocalStorage("envConfig", defaultEnvConfig);
-  const [done, setDone] = useState<boolean>(false);
+  const [dbData, setDBData] = useState<QueryDatabaseResponse>();
+
   const client = useNotionClient(envConfig);
-  const dbQuery = useQuery(
+  useQuery(
     ["queryDB"],
     () =>
       client?.databases?.query({
@@ -108,17 +110,19 @@ export function useAllData(queryOnce?: boolean): TSnippet[] {
         sorts: [],
       }),
     {
-      enabled: !!client && !done,
-      onSuccess: () => {
-        if (queryOnce) {
-          setDone(true);
-        }
+      enabled: !!client,
+      onSuccess: (data) => {
+        setDBData(data);
       },
+      cacheTime: 1_000_000,
+      staleTime: 1_000_000,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
     }
   );
 
   return (
-    dbQuery.data?.results?.map((result) => {
+    dbData?.results?.map((result) => {
       const dataRes = result as unknown as INotionQueryResult;
       return {
         snippetText: dataRes.properties.Snippet.rich_text.reduceRight(
@@ -138,7 +142,7 @@ export function useAllData(queryOnce?: boolean): TSnippet[] {
 }
 
 export function useRandomEntry(): TSnippet {
-  const data = useAllData(true);
+  const data = useAllData();
   const randomPos = _.random(0, data.length - 1, false);
   return data[randomPos];
 }
